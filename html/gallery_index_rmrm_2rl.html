@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+ <html>
+   <head>
+    <title>RMRM 2RL</title>
+    <link rel="shortcut icon" href="../graphic/image_zHQ_icon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="../css/button.css">
+    <script src="../js/jquery-3.3.1.min.js"></script>
+   </head>
+   <body>
+    <div id="table" align="center">
+      <table border="1">
+      </table>
+    </div>
+    <p id="iterations_display" style="visibility: hidden;">0 Iterations.</p>
+    <script src="../js/global.js"></script>
+    <script src="../js/function.js"></script>
+    <script src="../js/class.js"></script>
+    <script>
+            //objects
+      var pf;  //PlanetFactory
+      var ps;  //PlanetSet
+      var orbit;  //Orbit
+      var draw;  //Draw
+
+      var SYSTEM_MODE = SOLAR_SYSTEM;
+      var RELATIVE_MODE = RMRM;
+      var RECURSIVE_LEVEL = 2;
+
+      var canvas;
+      var ctx;
+      var window_width = 300;
+      var window_height = 300;
+    </script>
+
+    <script src="../js/api.js"></script>
+    <script>
+      // $(document).ready(function(){
+      //   $("#generatebutton").click(function(){
+      //     generateTable(Number($("#number").val()));
+      //     generatePattern(
+      //       Number($("#recursivelevel").val()),
+      //       $("#dashboard").children("input:checked").val(),
+      //       $("#angularincrements").val(),
+      //       $("#delta").val(),
+      //       Number($("#number").val())
+      //     );
+      //   });
+      // });
+    </script>
+
+    <script>
+
+      init();
+      main();
+
+      function generateTable(number){
+        $("#table").children("table").empty();
+
+        var column = 5;
+        var row = number / column;
+        var r, c, canvas_count = 0, p_count = 0;
+        
+        for (r = 0; r < row; r++){
+          $("#table").children("table").append("<tr>");
+          for (c = 0; c < column; c++){
+            $("#table").children("table").append(
+              '<td width="'+window_width+'"><canvas id="Canvas'+canvas_count.toString()+'" width="'+window_width+'" height="'+window_height+'"></canvas></td>'
+            );
+            canvas_count++;
+          }
+          $("#table").children("table").append("</tr>");
+
+          $("#table").children("table").append("<tr>");
+          for (c = 0; c < column; c++){
+            $("#table").children("table").append(
+              '<td width="'+window_width+'"><p align="center" id="p'+p_count.toString()+'"></td>'
+            );
+            p_count++;
+          }
+          $("#table").children("table").append("</tr>");
+        }
+      }
+
+      function generatePattern(rl, rm, angular, delta, number){
+        //drawing
+        var size = number, i, iterator;
+        var angular_list = angular.split(',');
+        var delta_list = delta.split(',');
+        var next_angular = "";
+
+        canvas = document.getElementById("Canvas0");
+        ctx = canvas.getContext("2d");
+        setParameter(rl, rm, 0.5, "#000000", 1);
+        redraw(angular);
+        $("#p0").html(angular);
+
+        for (iterator = 1; iterator < size; iterator++){
+          next_angular = "";
+
+          if (iterator > 4 && iterator % 5 == 0){
+        	next_angular += "0.1,0.9,";
+        	var num = (iterator / 5) * (-0.5);
+        	if (iterator == 25){
+        		num = -24;
+        	}
+        	next_angular += num.toString();
+          } else {
+          	for (i = 0; i < angular_list.length; i++){
+	            if (i > 0){
+	              next_angular += ",";
+	            }
+	            var num = roundX((Number(angular_list[i]) + Number(delta_list[i])), 2);
+	            next_angular += num.toString();
+	        }
+          }
+          angular_list = next_angular.split(',');
+          
+          canvas = document.getElementById("Canvas"+iterator);
+          ctx = canvas.getContext("2d");
+          redraw(next_angular);
+
+          $("#p"+iterator).html(next_angular);
+        }
+      }
+
+      function setParameter(rl, rm, zoom, color, width){
+        RECURSIVE_LEVEL = rl;
+        RELATIVE_MODE = rm;
+        changeParameter(zoom, color, width);
+      }
+
+      function init(){
+        pf = new PlanetFactory(RECURSIVE_LEVEL, RELATIVE_MODE);
+        ps = pf.createPlanet();
+        orbit = new Orbit(ps);
+        draw = new Draw(orbit, ps);
+      }
+
+      function changeParameter(zoom, color, width){
+        pf.set(RECURSIVE_LEVEL, RELATIVE_MODE);
+        ps = pf.createPlanet();
+        orbit.set(ps, zoom, color);
+        draw.set(orbit, ps, width);
+      }
+
+      function redraw(angular){  //string
+        draw.reset();
+
+        var split_parameter = angular.split(',');
+        if (split_parameter.length != RECURSIVE_LEVEL){
+          alert("Angular Increments number is wrong!");
+          return;
+        }
+        var s, e, i;
+        s = RELATIVE_MODE == MRM ? 1 : 0;
+        e = s + RECURSIVE_LEVEL;
+        for (i = 0; s < e; s++, i++){
+          ps.setAnGularIncrements(s, Number(split_parameter[i]));
+        }
+
+        //toggleLoadingText("visible");
+        orbit.calculate(300, 300);
+        //toggleLoadingText("hidden");
+        draw.drawOrbit();
+      }
+
+      function main(){
+		  generateTable(30);
+	      generatePattern(
+	        3,  //RL
+	        RMRM,  //Relative Mode
+	        "0.1,0.9,-0.1",  //Angular Increments
+	        "0.1,-0.1,0",  //Delta
+	        30  //Number
+	      );
+      }
+     </script>
+   </body>
+ </html>

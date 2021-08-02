@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<link rel="stylesheet" type="text/css" href="../css/bootstrap.min.lp.css">
+</head>
+<body>
+	<!-- <div class="container"> -->
+		<div class="row">
+			<div class="col-lg-10 col-xl-10">
+				<object id="svg1" data="./image.svg" type="image/svg+xml" width="100%"></object>
+			</div>
+			<div class="col-lg-2 col-xl-2" id="onoff"></div>
+		</div>
+	<!-- </div> -->
+</body>
+<script type="text/javascript">
+
+window.onload = function () {
+	const svg = document.getElementById('svg1').contentDocument.children[0];
+	const groups = svg.children;
+
+	let fragment = document.createDocumentFragment();
+
+	const name = ['背景','葉片_左上','葉片_中上','莖_左','花_中','葉片_中','莖_中','葉片_右','花_左','花_右','葉片_左下','圓圈_中','圓圈_左','圓圈_右', '骨架_右','骨架_上','骨架_中','骨架_左'];
+ 
+
+	Array.from(groups).map((x, index) => {
+		let input = document.createElement('input');
+		input.setAttribute('value', x.id);
+		input.setAttribute('type', 'checkbox');
+		input.checked = true;
+		let span = document.createElement('span');
+		span.innerHTML = ` ${name[index]}`;
+
+		let br = document.createElement('br');
+
+		fragment.appendChild(input);
+		fragment.appendChild(span);
+		fragment.appendChild(br);
+
+		return input
+	}).map(input =>{
+		input.onclick = clickInput;
+	});
+	document.getElementById('onoff').appendChild(fragment);
+
+
+	function clickInput(input){
+		console.log(input.target);	
+		let elm = input.target;
+		svg.getElementById(elm.value).style.display = elm.checked ? 'block' : 'none';
+	}
+}
+
+
+</script>
+</html>
