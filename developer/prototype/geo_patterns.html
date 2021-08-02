@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+ <html>
+   <head>
+   </head>
+   <body>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="js/dat.gui.min.js"></script>
+    <script src="js/data.js"></script>
+    <script>
+      var svgContainer;
+      //  object
+      var c1, c2, path, c0, c0o, c1o, c2o, ship;
+      var c1x, c1y, c2x, c2y, c0x, c0y, shipx, shipy;
+      var text;
+      
+      //  animate FPS control
+      var fps, fpsInterval, startTime, now, then, elapsed;
+      fps = 120;
+
+      //animate
+      var speed = 0.1;
+      var count = 0;
+      var first_point = new Point();
+      var draw = false;
+      var finished = false;
+      var epsilon = 0.000001;
+      var init_posX = 750, init_posY = 200;
+
+      var ship_count = 0;
+
+      //dat.gui
+      var controls;
+
+      main();
+
+      function main(){
+        svgContainer = d3.select("body")
+          .append("svg")
+          .attr("width", 1500)
+          .attr("height", 700);
+
+        //circle
+        //ship = svgContainer
+        //  .append("circle")
+        //  .attr("r", 5)
+        //  .attr("fill", "blue");
+        svgContainer
+          .append("line")
+          .attr("x1", 750).attr("y1", 200)
+          .attr("x2", 790).attr("y2", 200)
+          .style("stroke", "black")
+          .style("stroke-width", 2);
+        c0 = new Circle(svgContainer, 10, "black");
+        c1 = new Circle(svgContainer, 10, "purple");
+        //c2 = new Circle(svgContainer, 10, "yellow");
+        c0o = new Circle(svgContainer, 40, "black");  c0o.circle.attr("stroke", "black"); c0o.circle.attr("fill", "none");
+        //c1o = new Circle(svgContainer, 40, "purple");  c1o.circle.attr("stroke", "black"); c1o.circle.attr("fill", "none");
+        //c2o = new Circle(svgContainer, 40, "yellow");  c2o.circle.attr("stroke", "black"); c2o.circle.attr("fill", "none");
+        //ship.attr("cx", 750+10).attr("cy", 200);
+        //shipx = 760; shipy = 200;
+        c0.setPoint(init_posX, init_posY, 0, 1, 40, 0);
+        c1.setPoint(init_posX, init_posY, 0, 5, 40, 0);  //a, a_inc,
+        //c2.setPoint(init_posX, init_posY, 0, 5, 40, 0);  //          r, r_inc
+        c0o.setPoint(init_posX, init_posY, 0, 5, 40, 0);
+        //c1o.setPoint(init_posX, init_posY, 0, 5, 40, 0);  //a, a_inc,
+        //c2o.setPoint(init_posX, init_posY, 0, 5, 40, 0);  //          r, r_inc
+        //c0.bind(c2);
+        c1.bind(c0);
+        //c2.bind(c1);
+
+        //path
+        path = new Path(svgContainer, 1, "black");
+
+        //text
+        text = svgContainer.append("text")
+          .attr("x", 1000)
+          .attr("y", 100)
+          .style("font-size", "24px")
+          .style("fill", "red")
+          .text("0 iterations");
+
+        //dat.gui
+        var gui = new dat.GUI();
+        controls = new function(){
+          this.c1a = 0;
+          this.c1ai = 5;
+          this.c1r = 40;
+          this.c1ri = 0;
+          this.c1show = 0;
+          this.c2a = 0;
+          this.c2ai = 1;
+          this.c2r = 40;
+          this.c2ri = 0;
+          this.c2show = 0;
+          this.draw = function(){
+            draw = true;
+            path.show();
+          }
+          this.clear = function(){
+            draw = false;
+            finished = false;
+            c1.clear();
+            c2.clear();
+            path.clear();
+            first_point.setPosition(0, 0);
+            count = 0;
+            text.text(""+count+" iterations");
+          }
+        }
+        var f1 = gui.addFolder("Circle 1");
+        f1.add(controls, "c1a", 0, 359).step(1).name("Angle");
+        f1.add(controls, "c1ai", 0, 10).step(0.01).name("Angular Increment");
+        f1.add(controls, "c1r", 0, 5).step(1).name("Radius");
+        f1.add(controls, "c1ri", 0, 0).step(1).name("Radius Increment");
+        f1.add(controls, "c1show", {Show: 0, Hide: 1}).onFinishChange(function(value){
+          value == 0 ? c1.show() : c1.hide();
+        }).name("Show");
+        f1.open();
+
+        var f2 = gui.addFolder("Circle 2");
+        f2.add(controls, "c2a", 0, 359).step(1).name("Angle");
+        f2.add(controls, "c2ai", 0, 10).step(0.01).name("Angular Increment");
+        f2.add(controls, "c2r", 0, 5).step(1).name("Radius");
+        f2.add(controls, "c2ri", 0, 0).step(1).name("Radius Increment");
+        f2.add(controls, "c2show", {Show: 0, Hide: 1}).onFinishChange(function(value){
+          value == 0 ? c2.show() : c2.hide();
+        }).name("Show");
+        f2.open();
+
+        gui.add (controls, "draw").name("draw");
+        gui.add (controls, "clear").name("Clear");
+
+        display();
+      }
+
+      function display(){
+        fpsInterval = 1000 / fps;
+        then = Date.now();
+        startTime = then;
+        animate();
+      }
+
+      function animate(){
+        requestAnimationFrame(animate);
+
+        now = Date.now();
+        elapsed = now - then;
+
+        if (elapsed > fpsInterval){
+          then = now - (elapsed % fpsInterval);
+
+          //  draw
+          if (draw && !finished)
+            update();
+          else if (!draw){
+            c0.setPoint(init_posX, init_posY, controls.c1a, controls.c1ai, controls.c1r, controls.c1ri);
+            c1.setPoint(init_posX+40, init_posY, controls.c1a, controls.c1ai, controls.c1r, controls.c1ri);
+            //c2.setPoint(init_posX-20, init_posY+17, controls.c2a, controls.c2ai, controls.c2r, controls.c2ri);
+            c0o.setPoint(init_posX, init_posY, controls.c1a, controls.c1ai, controls.c1r, controls.c1ri);
+            //c1o.setPoint(init_posX+20, init_posY+17, controls.c1a, controls.c1ai, controls.c1r, controls.c1ri);
+            //c2o.setPoint(init_posX-20, init_posY+17, controls.c1a, controls.c1ai, controls.c1r, controls.c1ri);
+          }
+        }
+      }
+
+      function update(){
+        //c0.update();
+        c1.update();
+        //c2.update();
+        c0o.setPosition(c0.x, c0.y);
+        //c1o.setPosition(c1.x, c1.y);
+        //c2o.setPosition(c2.x, c2.y);
+        //path.update(c2.x, c2.y);
+
+        // if (ship_count <= 15){
+        //   shipx += (c1.x-shipx)/15;
+        //   shipy += (c1.y-shipy)/15;
+        //   ship_count++;
+        // } else {
+        //   shipx += (c0.x-shipx)/15;
+        //   shipy += (c0.y-shipy)/15;
+        //   ship_count++;
+        //   if (ship_count >= 30)
+        //     ship_count = 0;
+        // }
+        // ship.attr("cx", shipx).attr("cy", shipy);
+        
+        if (first_point.x == 0 && first_point.y == 0)
+          first_point.setPosition(c2.x, c2.y);
+        else if (first_point.checkEqual(c2.point))
+          finished = true;
+
+        count = Math.floor(c2.point.a / 360);
+        text.text(""+count+" iterations");
+      }
+     </script>
+   </body>
+ </html>

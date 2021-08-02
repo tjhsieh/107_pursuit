@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+ <html>
+   <head>
+   </head>
+   <body>
+    <canvas id="Canvas" width="1200" height="700" style="border:1px solid #000000;"></canvas>
+    <p id="iterations_display" style="position:relative; color:red; font-size:50px; 
+        top:0px; left:500px;">0 Iterations.</p>
+    <p id="status" style="position:absolute; top:300px; left:500px; color:red; font-size:50px; visibility:hidden;">Loading...</p>
+    <script src="../js/dat.gui.min.js"></script>
+    <script src="../js/global.js"></script>
+    <script src="../js/function.js"></script>
+    <script src="../js/class.js"></script>
+    <script src="../js/api.js"></script>
+    <script>
+      //  animate FPS control
+      var fps, fpsInterval, startTime, now, then, elapsed;
+      fps = 60;
+
+      //objects
+      var pf;  //PlanetFactory
+      var ps;  //PlanetSet
+      var orbit;  //Orbit
+      var draw;  //Draw
+
+      var RELATIVE_MODE = MRM;
+      var RECURSIVE_LEVEL = 2;
+
+      var canvas = document.getElementById("Canvas");
+      var ctx = canvas.getContext("2d");
+      var window_width = canvas.width;
+      var window_height = canvas.height;
+
+      //dat.gui
+      var controls;
+
+      init();
+      main();
+
+      function init(){
+        RELATIVE_MODE == MRM
+        GLOBAL_RADIUS = 100;
+        PIXEL_MODE = true;
+
+        pf = new PlanetFactory(RECURSIVE_LEVEL, RELATIVE_MODE);
+        ps = pf.createPlanet();
+        orbit = new Orbit(ps);
+        draw = new Draw(orbit, ps);
+      }
+      function main(){
+        //dat.GUI
+        var gui = new dat.GUI();
+        controls = new function(){
+          this.iteration = 14000000;
+          this.run = function(){
+            ITERATIONS_LIMIT = this.iteration;
+            draw.reset();
+            ps.setAnGularIncrements(1, 0.1);
+            ps.setAnGularIncrements(2, 0.9);
+            //toggleLoadingText("visible");
+            orbit.calculate();
+            //toggleLoadingText("hidden");
+            draw.drawOrbit();
+          }
+        }
+        gui.add(controls, 'iteration');
+        gui.add(controls, 'run').name('Run');
+
+        display();
+      }
+
+      function display(){
+        fpsInterval = 1000 / fps;
+        then = Date.now();
+        startTime = then;
+        animate();
+      }
+
+      function animate(){
+        requestAnimationFrame(animate);
+
+        now = Date.now();
+        elapsed = now - then;
+
+        if (elapsed > fpsInterval){
+          then = now - (elapsed % fpsInterval);
+        }
+        update();
+      }
+
+      function update(){
+        //clearCanvas();
+        draw.update();
+      }
+     </script>
+   </body>
+ </html>

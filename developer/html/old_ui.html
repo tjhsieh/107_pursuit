@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+ <html>
+   <head>
+    <script src="../js/jquery-3.3.1.min.js"></script>
+   </head>
+   <body>
+    <canvas id="Canvas" width="800" height="800" style="border:1px solid #000000;"></canvas>
+    <p id="iterations_display" style="position:relative; color:red; font-size:50px; 
+        top:-200px; left:1000px;">0 Iterations.</p>
+    <p id="status" style="position:absolute; top:300px; left:500px; color:red; font-size:50px; visibility:hidden;">Loading...</p>
+    <script src="../js/dat.gui.min.js"></script>
+    <script src="../js/global.js"></script>
+    <script src="../js/function.js"></script>
+    <script src="../js/class.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/jquery.api.js"></script>
+    <script>
+      //  animate FPS control
+      var fps, fpsInterval, startTime, now, then, elapsed;
+      fps = 60;
+
+      //objects
+      var pf;  //PlanetFactory
+      var ps;  //PlanetSet
+      var orbit;  //Orbit
+      var draw;  //Draw
+
+      var RELATIVE_MODE = MRM;
+      var RECURSIVE_LEVEL = 2;
+      var ANIMATE_SPEED = 10;
+
+      //dat.gui
+      var controls;
+
+      init();
+      main();
+
+      function init(){
+        pf = new PlanetFactory(RECURSIVE_LEVEL, RELATIVE_MODE);
+        ps = pf.createPlanet();
+        orbit = new Orbit(ps);
+        draw = new Draw(orbit, ps);
+      }
+      function main(){
+        //dat.GUI
+        var gui = new dat.GUI();
+        controls = new function(){
+          this.relative_mode = 'MRM';
+          this.angluar_ratio = 'Choose';
+          this.animate = function(){
+            draw.drawOrbitAnimate(ANIMATE_SPEED);
+          }
+        }
+        gui.add(controls, 'relative_mode', ['MRM', 'RMRM']).onFinishChange(function(value){
+          toggleRelativeMode(value);
+          init();
+        }).name('Relative Mode');
+        gui.add(controls, 'angluar_ratio', ['Choose', '(0.1, 0.9)', '(0.15, 0.85)', '(0.2, 0.8)', '(0.25, 0.75)', '(0.3, 0.7)', '(0.35, 0.65)', '(0.4, 0.6)', '(0.45, 0.55)', '(0.5, 0.5)']).onFinishChange(function(value){
+          var a1, a2;
+          switch(value){
+            case 'Choose':
+              break;
+            case '(0.1, 0.9)':
+              a1 = 0.1; a2 = 0.9;
+              break;
+            case '(0.15, 0.85)':
+              a1 = 0.15; a2 = 0.85;
+              break;
+            case '(0.2, 0.8)':
+              a1 = 0.2; a2 = 0.8;
+              break;
+            case '(0.25, 0.75)':
+              a1 = 0.25; a2 = 0.75;
+              break;
+            case '(0.3, 0.7)':
+              a1 = 0.3; a2 = 0.7;
+              break;
+            case '(0.35, 0.65)':
+              a1 = 0.35; a2 = 0.65;
+              break;
+            case '(0.4, 0.6)':
+              a1 = 0.4; a2 = 0.6;
+              break;
+            case '(0.45, 0.55)':
+              a1 = 0.45; a2 = 0.55;
+              break;
+            case '(0.5, 0.5)':
+              a1 = 0.5; a2 = 0.5;
+              break;
+          }
+
+          draw.reset();
+
+          var cnt = 0;
+          if (RELATIVE_MODE == MRM)
+            cnt ++;
+          ps.setAnGularIncrements(cnt++, a1);
+          ps.setAnGularIncrements(cnt++, a2);
+
+          //toggleLoadingText("visible");
+          orbit.calculate();
+          //toggleLoadingText("hidden");
+          draw.drawOrbit();
+        }).name('Angular Ratio');
+        gui.add(controls, 'animate').name('Animate');
+
+        display();
+      }
+
+      function display(){
+        fpsInterval = 1000 / fps;
+        then = Date.now();
+        startTime = then;
+        animate();
+      }
+
+      function animate(){
+        requestAnimationFrame(animate);
+
+        now = Date.now();
+        elapsed = now - then;
+
+        if (elapsed > fpsInterval){
+          then = now - (elapsed % fpsInterval);
+        }
+        update();
+      }
+
+      function update(){
+        //clearCanvas();
+        draw.update();
+      }
+     </script>
+   </body>
+ </html>

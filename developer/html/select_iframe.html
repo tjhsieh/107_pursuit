@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+ <html>
+   <head>
+    <title>select iframe</title>
+    <link rel="stylesheet" href="../css/button.css">
+    <style>
+      html{
+        width: :100%;
+        overflow-x: hidden;
+      }
+    </style>
+    <script src="../js/jquery-3.3.1.min.js"></script>
+   </head>
+   <body>
+    <div id="table" align="center">
+      <table border="1">
+      </table>
+    </div>
+    <div id="button_sign" style="position:relative; left:170px; visibility: hidden">
+      <button class="button" value="+">+</button>
+      <button class="button" value="-">-</button>
+    </div>
+    <div id="button_more" style="position:relative; top:-57px; left: 430px">
+      <button class="button" value="more">More</button>
+    </div>
+    <p id="iterations_display" style="visibility: hidden;">0 Iterations.</p>
+    <script src="../js/global.js"></script>
+    <script src="../js/function.js"></script>
+    <script src="../js/class.js"></script>
+    <script>
+            //objects
+      var pf;  //PlanetFactory
+      var ps;  //PlanetSet
+      var orbit;  //Orbit
+      var draw;  //Draw
+
+      var SYSTEM_MODE = SOLAR_SYSTEM;
+      var RELATIVE_MODE = MRM;
+      var RECURSIVE_LEVEL = 0;
+
+      var canvas;
+      var ctx;
+      var window_width = 200;
+      var window_height = 200;
+
+      var table_number = 9;
+      var sign = 1;  // 1 = positive,  -1 = negative
+      var angular_index = 0;
+      var angular_array = [];
+    </script>
+
+    <script src="../js/api.js"></script>
+    <script>
+      $(document).ready(function(){
+        $("#button_more").children("button").click(function(){
+          table_number += 9;
+          drawTable();
+        });
+
+        $("#button_sign").children("button").click(function(){
+          if ($(this).val() == "+"){
+            if (sign != 1){
+              sign = 1;
+              drawTable();
+            }
+          } else if ($(this).val() == "-"){
+            if (sign != -1){
+              sign = -1;
+              drawTable();
+            }
+          }
+        });
+      });
+    </script>
+
+    <script>
+
+      init();
+      main();
+
+      function generateTable(number){
+        $("#table").children("table").empty();
+
+        var column = 3;
+        var row = number / column;
+        var r, c, canvas_count = 0, p_count = 0;
+        
+        for (r = 0; r < row; r++){
+          $("#table").children("table").append("<tr>");
+          for (c = 0; c < column; c++){
+            $("#table").children("table").append(
+              '<td width="'+window_width+'"><canvas id="Canvas'+canvas_count.toString()+'" width="'+window_width+'" height="'+window_height+'"></canvas></td>'
+            );
+            canvas_count++;
+          }
+          $("#table").children("table").append("</tr>");
+
+          $("#table").children("table").append("<tr>");
+          for (c = 0; c < column; c++){
+            $("#table").children("table").append(
+              '<td width="'+window_width+'"><p align="center" id="p'+p_count.toString()+'"></td>'
+            );
+            p_count++;
+          }
+          $("#table").children("table").append("</tr>");
+        }
+
+        $("canvas").click(function(){
+          //console.log(""+$(this).attr("id"));
+          var id_str = $(this).attr("id");
+          var id_num = roundX((Number(id_str.substring(6,id_str.length))+1)*0.1, 1);
+          if (sign < 0){
+            id_num *= -1;
+          }
+          angular_array.push(id_num.toString());
+          angular_index ++;
+
+          if (angular_index >= 2){
+            $("#button_sign").css("visibility", "visible");
+          }
+
+          //console.log(angular_array[angular_index-1]);
+
+          if (angular_index >= RECURSIVE_LEVEL){
+            var angular_str = "";
+            for (var i = 0; i < RECURSIVE_LEVEL; i++){
+              if (i > 0){
+                angular_str += ",";
+              }
+              angular_str += angular_array[i];
+            }
+            window.parent.postMessage(angular_str, "*");
+          } else {
+            table_number = 9;
+            drawTable();
+          }
+        });
+      }
+
+      function generatePattern(rl, rm, angular, delta, number){
+        //drawing
+        var size = number, i, iterator;
+        var angular_list = angular.split(',');
+        var delta_list = delta.split(',');
+        var next_angular = "";
+
+        canvas = document.getElementById("Canvas0");
+        ctx = canvas.getContext("2d");
+        setParameter(rl, rm, 0.5, "#000000", 1);
+        redraw(angular);
+        $("#p0").html(angular);
+
+        for (iterator = 1; iterator < size; iterator++){
+          next_angular = "";
+          for (i = 0; i < angular_list.length; i++){
+            if (i > 0){
+              next_angular += ",";
+            }
+            var num = roundX((Number(angular_list[i]) + Number(delta_list[i])), 2);
+            next_angular += num.toString();
+          }
+          angular_list = next_angular.split(',');
+          
+          canvas = document.getElementById("Canvas"+iterator);
+          ctx = canvas.getContext("2d");
+          redraw(next_angular);
+
+          $("#p"+iterator).html(next_angular);
+        }
+      }
+
+      function setParameter(rl, rm, zoom, color, width){
+        RECURSIVE_LEVEL = rl;
+        RELATIVE_MODE = rm;
+        changeParameter(zoom, color, width);
+      }
+
+      function init(){
+        pf = new PlanetFactory(RECURSIVE_LEVEL, RELATIVE_MODE);
+        ps = pf.createPlanet();
+        orbit = new Orbit(ps);
+        draw = new Draw(orbit, ps);
+      }
+
+      function changeParameter(zoom, color, width){
+        pf.set(RECURSIVE_LEVEL, RELATIVE_MODE);
+        ps = pf.createPlanet();
+        orbit.set(ps, zoom, color);
+        draw.set(orbit, ps, width);
+      }
+
+      function redraw(angular){  //string
+        draw.reset();
+
+        var split_parameter = angular.split(',');
+        if (split_parameter.length != RECURSIVE_LEVEL){
+          alert("Angular Increments number is wrong!");
+          return;
+        }
+        var s, e, i;
+        s = RELATIVE_MODE == MRM ? 1 : 0;
+        e = s + RECURSIVE_LEVEL;
+        for (i = 0; s < e; s++, i++){
+          ps.setAnGularIncrements(s, Number(split_parameter[i]));
+        }
+
+        //toggleLoadingText("visible");
+        orbit.calculate(window_width, window_height);
+        //toggleLoadingText("hidden");
+        draw.drawOrbit();
+      }
+
+      function main(){
+        window.addEventListener("message", receiveMessage);
+      }
+
+      function receiveMessage(event){
+        var split_parameter = event.data.split(',');
+        RECURSIVE_LEVEL = Number(split_parameter[0].charAt(0));
+        RELATIVE_MODE = split_parameter[1];
+
+        drawTable();
+      }
+
+      function drawTable(){
+        if (RECURSIVE_LEVEL < 2){
+          alert("Post Message Error! (main to iframe)");
+          return;
+        }
+        generateTable(table_number);
+        var angular_t = "";
+        var delta = "";
+        var i = 0, j;
+        for (i = 0; i < angular_index; i++){
+          if (i > 0){
+            angular_t += ",";
+          }
+          angular_t += angular_array[i];
+        }
+
+        for (j = i; j < RECURSIVE_LEVEL; j++){
+          if (j > 0){
+            angular_t += ",";
+          }
+          if (sign < 0 && j >= 2 && j == angular_index){
+            angular_t += "-";
+          }
+          angular_t += "0.1";
+        }
+
+        for (i = 0; i < RECURSIVE_LEVEL; i++){
+          if (i > 0){
+            delta += ",";
+          }
+          if (i == angular_index){
+            if (sign < 0 && j >= 2){
+              delta += "-";
+            }
+            delta += "0.1";
+          } else {
+            delta += "0";
+          }
+        }
+
+        generatePattern(RECURSIVE_LEVEL, RELATIVE_MODE, angular_t, delta, table_number)
+      }
+     </script>
+   </body>
+ </html>

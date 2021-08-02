@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+ <html>
+   <head>
+    <title>Geometric recursive patterns generating system</title>
+    <link rel="shortcut icon" href="../graphic/image_zHQ_icon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="../css/button.css">
+    <script src="../js/jquery-3.3.1.min.js"></script>
+   </head>
+   <body>
+    <canvas id="Canvas" width="800" height="800" style="border:1px solid #000000;"></canvas>
+    <div id="displays" style="position:relative; color:red; font-size:50px; 
+        top:-110px; left:1000px;">
+      <p id="iterations_display">0 Iterations.</p>
+    </div>
+    <div id="buttons">
+      <div id="system_mode_buttons" style="position:relative; top:-950px; left:1000px">
+        <p class="text">System Mode</p>
+        <button class="button" value="SOLAR_SYSTEM">Solar System</button>
+      </div>
+      <div id="relative_mode_buttons" style="position:relative; top:-950px; left:1000px">
+        <p class="text">Relative Mode</p>
+        <button class="button" value="MRM">MRM</button>
+        <button class="button" value="RMRM">RMRM</button>
+      </div>
+      <div id="recursive_level_buttons" style="position:relative; top:-950px; left:1000px">
+        <p class="text">Recursive Level</p>
+        <button class="button" value="2">2RL</button>
+        <button class="button" value="3">3RL</button>
+      </div>
+      <div id="angular_increments_buttons" style="position:relative; top:-950px; left:1000px">
+        <p class="text">Angular Increments</p>
+        <button class="button" value="1">(0.1, 0.9)</button>
+        <button class="button" value="2">(0.15, 0.85)</button>
+        <button class="button" value="3">(0.2, 0.8)</button>
+        <button class="button" value="4">(0.25, 0.75)</button>
+        <button class="button" value="5">(0.3, 0.7)</button>
+        <br/>
+        <button class="button" value="6">(0.35, 0.65)</button>
+        <button class="button" value="7">(0.4, 0.6)</button>
+        <button class="button" value="8">(0.45, 0.55)</button>
+        <button class="button" value="9">(0.5, 0.5)</button>
+      </div>
+      <div id="animate_buttons" style="position:relative; top:-950px; left:1000px">
+        <p class="text">Animation</p>
+        <button class="button">Animate</button>
+      </div>
+    </div>
+    <script src="../js/global.js"></script>
+    <script src="../js/function.js"></script>
+    <script src="../js/class.js"></script>
+    <script>
+      //  animate FPS control
+      var fps, fpsInterval, startTime, now, then, elapsed;
+      fps = 60;
+
+      //objects
+      var pf;  //PlanetFactory
+      var ps;  //PlanetSet
+      var orbit;  //Orbit
+      var draw;  //Draw
+
+      var SYSTEM_MODE = SOLAR_SYSTEM;
+      var RELATIVE_MODE = MRM;
+      var RECURSIVE_LEVEL = 2;
+      var ANGULAR_INCREMENTS_1 = 0.1, ANGULAR_INCREMENTS_2 = 0.9;
+      var ANIMATE_SPEED = 3;
+
+      var canvas = document.getElementById("Canvas");
+      var ctx = canvas.getContext("2d");
+      var window_width = canvas.width;
+      var window_height = canvas.height;
+    </script>
+
+    <script src="../js/api.js"></script>
+    <script>
+      $(document).ready(function(){
+        $("button:first-of-type").css("background-color", "#ffffdd");
+        $("button").click(function(){
+          $(this).parent().children("button").css("background-color", "#dddddd");
+          $(this).css("background-color", "#ffffdd");
+        });
+        $("#system_mode_buttons").children("button").click(function(){
+          SYSTEM_MODE = $(this).val();
+          console.log("System Mode Changed to "+SYSTEM_MODE);
+        });
+        $("#relative_mode_buttons").children("button").click(function(){
+          RELATIVE_MODE = $(this).val();
+          init();
+          redraw();
+          console.log("Relative Mode Changed to "+RELATIVE_MODE);
+        });
+        $("#recursive_level_buttons").children("button").click(function(){
+          RECURSIVE_LEVEL = Number($(this).val());
+          init();
+          redraw();
+          console.log("Recursive Level Changed to "+RECURSIVE_LEVEL);
+        });
+        $("#angular_increments_buttons").children("button").click(function(){
+          var value = $(this).val();
+          switch(value){
+            case "1":
+              ANGULAR_INCREMENTS_1 = 0.1;
+              ANGULAR_INCREMENTS_2 = 0.9;
+              break;
+            case "2":
+              ANGULAR_INCREMENTS_1 = 0.15;
+              ANGULAR_INCREMENTS_2 = 0.85;
+              break;
+            case "3":
+              ANGULAR_INCREMENTS_1 = 0.2;
+              ANGULAR_INCREMENTS_2 = 0.8;
+              break;
+            case "4":
+              ANGULAR_INCREMENTS_1 = 0.25;
+              ANGULAR_INCREMENTS_2 = 0.75;
+              break;
+            case "5":
+              ANGULAR_INCREMENTS_1 = 0.3;
+              ANGULAR_INCREMENTS_2 = 0.7;
+              break;
+            case "6":
+              ANGULAR_INCREMENTS_1 = 0.35;
+              ANGULAR_INCREMENTS_2 = 0.65;
+              break;
+            case "7":
+              ANGULAR_INCREMENTS_1 = 0.4;
+              ANGULAR_INCREMENTS_2 = 0.6;
+              break;
+            case "8":
+              ANGULAR_INCREMENTS_1 = 0.45;
+              ANGULAR_INCREMENTS_2 = 0.55;
+              break;
+            case "9":
+              ANGULAR_INCREMENTS_1 = 0.5;
+              ANGULAR_INCREMENTS_2 = 0.5;
+              break;
+          }
+          redraw();
+          console.log("Angular Increments Changed to "+"("+ANGULAR_INCREMENTS_1+", "+ANGULAR_INCREMENTS_2+")");
+        });
+        $("#animate_buttons").children("button").click(function(){
+          draw.drawOrbitAnimate(ANIMATE_SPEED);
+          console.log("Animate");
+        });
+      });
+    </script>
+
+    <script>
+
+      init();
+      main();
+
+      function init(){
+        pf = new PlanetFactory(RECURSIVE_LEVEL, RELATIVE_MODE);
+        ps = pf.createPlanet();
+        orbit = new Orbit(ps);
+        draw = new Draw(orbit, ps);
+      }
+      function redraw(){
+        draw.reset();
+
+        var cnt = 0;
+        if (RELATIVE_MODE == MRM)
+          cnt ++;
+        ps.setAnGularIncrements(cnt++, ANGULAR_INCREMENTS_1);
+        ps.setAnGularIncrements(cnt++, ANGULAR_INCREMENTS_2);
+        if (RECURSIVE_LEVEL > 2)
+          ps.setAnGularIncrements(cnt++, -0.1);
+
+        //toggleLoadingText("visible");
+        orbit.calculate(800, 800);
+        //toggleLoadingText("hidden");
+        clearCanvas(ctx);
+        draw.drawOrbit();
+
+        display();
+      }
+      function main(){
+        redraw();
+        display();
+      }
+
+      function display(){
+        fpsInterval = 1000 / fps;
+        then = Date.now();
+        startTime = then;
+        animate();
+      }
+
+      function animate(){
+        requestAnimationFrame(animate);
+
+        now = Date.now();
+        elapsed = now - then;
+
+        if (elapsed > fpsInterval){
+          then = now - (elapsed % fpsInterval);
+        }
+        update();
+      }
+
+      function update(){
+        //clearCanvas();
+        draw.update();
+      }
+     </script>
+   </body>
+ </html>

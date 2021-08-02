@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+ <html>
+   <head>
+    <title>Pattern Editor</title>
+    <link rel="shortcut icon" href="../graphic/image_zHQ_icon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="../css/button.css">
+    <script src="../js/jquery-3.3.1.min.js"></script>
+   </head>
+   <body>
+    <canvas id="Canvas" width="800" height="800" style="border:1px solid #000000;"></canvas>
+    <div id="displays" style="position:relative; color:red; font-size:50px; 
+        top:-110px; left:1000px;">
+      <p id="iterations_display" style="visibility: hidden;">0 Iterations.</p>
+    </div>
+    <div id="new_pattern" style="position:relative; top:-930px; left:1200px;">
+      <p style="font-size:50px; color:#dd4444"><b>Pattern Editor</b></p>
+      <div id="recursive_level" style="position:relative; left:-120px; font-size:20px">
+        <b>Recursive Level:</b><br/>
+        <input type="number" name="recursivelevel" min="2" value="2">
+      </div>
+      <div id="relative_mode" style="position:relative; left:220px; top:-45px; font-size:20px">
+        <b>Relative Mode:</b><br/>
+        <input type="radio" name="relativemode" value="MRM" checked>MRM
+        <input type="radio" name="relativemode" value="RMRM">RMRM
+      </div>
+      <div id="pattern_size" style="position:relative; left:-120px; font-size:20px">
+        <b>Pattern Size:</b><br/>
+        <input type="text" name="patternsize" value="1.0">
+      </div>
+      <div id="pattern_color" style="position:relative; left:220px; top:-45px; font-size:20px">
+        <b>Pattern & Background Color:</b><br/>
+        <input type="color" name="patterncolor">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <input type="color" name="backgroundcolor" value="#ffffff">
+      </div>
+      <div id="angular_increments" style="position:relative; left:-120px; font-size:20px">
+        <b>Angular Increments:</b><br/>
+        <input type="text" name="angularincrements" value="0.1,0.9">
+      </div>
+      <div id="line_width" style="position:relative; left:220px; top:-45px; font-size:20px">
+        <b>Line Width:</b><br/>
+        <input type="number" name="linewidth" min="1" value="1">
+      </div>
+      <div id="create_clear" style="position:relative; left:-50px; top:70px; font-size:20px">
+        <button class="button" value="create">Create</button>
+        <button class="button" value="clear">Clear</button>
+        <button class="button" value="animate" style="display: none">Animate</button>
+        <a href="#" class="button" id="download" download="image.png">Download</a>
+      </div>
+    </div>
+    <script src="../js/global.js"></script>
+    <script src="../js/function.js"></script>
+    <script src="../js/class.js"></script>
+    <script>
+      //  animate FPS control
+      var fps, fpsInterval, startTime, now, then, elapsed;
+      fps = 60;
+
+      //objects
+      var pf;  //PlanetFactory
+      var ps;  //PlanetSet
+      var orbit;  //Orbit
+      var draw;  //Draw
+
+      var SYSTEM_MODE = SOLAR_SYSTEM;
+      var RELATIVE_MODE = MRM;
+      var RECURSIVE_LEVEL = 2;
+      var ANIMATE_SPEED = 10;
+
+      var canvas = document.getElementById("Canvas");
+      var ctx = canvas.getContext("2d");
+      var window_width = canvas.width;
+      var window_height = canvas.height;
+      var background_color = "#ffffff";
+    </script>
+
+    <script src="../js/api.js"></script>
+    <script>
+      $(document).ready(function(){
+        $("button").click(function(){
+          $(this).parent().children("button").css("background-color", "#dddddd");
+          $(this).css("background-color", "#ffffdd");
+        });
+        
+        $("#create_clear").children("button").click(function(){
+          background_color = $("#pattern_color").children("input:last").val();
+          switch($(this).val()){
+            case "create":
+              setParameter(
+                Number($("#recursive_level").children("input").val()), 
+                $("#relative_mode").children(":checked").val(),
+                Number($("#pattern_size").children("input").val()),
+                $("#pattern_color").children("input:first").val(),
+                Number($("#line_width").children("input").val())
+              );
+              redraw($("#angular_increments").children("input").val());
+              break;
+            case "clear":
+              init();
+              clearCanvas(ctx, background_color);
+              break;
+            case "animate":
+              if (!draw.isAnimating()){
+                $(this).parent().children("button").attr("disabled", true);
+                $(this).attr("disabled", false);
+                $(this).html("Stop");
+                draw.drawOrbitAnimate(ANIMATE_SPEED);
+              } else {
+                $(this).parent().children("button").attr("disabled", false);
+                $(this).html("Animate");
+                draw.stop();
+              }
+              break;
+          }
+        });
+
+        $("#download").click(function(){
+          var image = canvas.toDataURL();
+          $(this).attr("href", image);
+        });
+      });
+    </script>
+
+    <script>
+
+      init();
+      main();
+
+      function setParameter(rl, rm, zoom, color, width){
+        RECURSIVE_LEVEL = rl;
+        RELATIVE_MODE = rm;
+        changeParameter(zoom, color, width);
+      }
+
+      function init(){
+        pf = new PlanetFactory(RECURSIVE_LEVEL, RELATIVE_MODE);
+        ps = pf.createPlanet();
+        orbit = new Orbit(ps);
+        draw = new Draw(orbit, ps);
+      }
+
+      function changeParameter(zoom, color, width){
+        pf.set(RECURSIVE_LEVEL, RELATIVE_MODE);
+        ps = pf.createPlanet();
+        orbit.set(ps, zoom, color);
+        draw.set(orbit, ps, width);
+      }
+
+      function redraw(angular){  //string
+        draw.reset();
+
+        var split_parameter = angular.split(',');
+        if (split_parameter.length != RECURSIVE_LEVEL){
+          alert("Angular Increments number is wrong!");
+          return;
+        }
+        var s, e, i;
+        s = RELATIVE_MODE == MRM ? 1 : 0;
+        e = s + RECURSIVE_LEVEL;
+        for (i = 0; s < e; s++, i++){
+          ps.setAnGularIncrements(s, Number(split_parameter[i]));
+        }
+
+        //toggleLoadingText("visible");
+        orbit.calculate(800, 800);
+        //toggleLoadingText("hidden");
+        draw.drawOrbit();
+      }
+
+      function main(){
+        /*
+        setParameter(2, RMRM, 1.5, '#ff0000');
+        redraw(0.1, 0.9);
+        setParameter(2, RMRM, 2.0, '#00ff00');
+        redraw(0.1, 0.9);
+        setParameter(2, RMRM, 1.0, '#0000ff');
+        redraw(0.3, 0.7);
+        */
+        clearCanvas(ctx);
+        //display();
+      }
+
+      function display(){
+        fpsInterval = 1000 / fps;
+        then = Date.now();
+        startTime = then;
+        animate();
+      }
+
+      function animate(){
+        requestAnimationFrame(animate);
+
+        now = Date.now();
+        elapsed = now - then;
+
+        if (elapsed > fpsInterval){
+          then = now - (elapsed % fpsInterval);
+        }
+        update();
+      }
+
+      function update(){
+        //clearCanvas();
+        draw.update();
+      }
+     </script>
+   </body>
+ </html>

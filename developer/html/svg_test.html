@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+ <html>
+   <head>
+    <title>Pattern Editor with Gallery</title>
+    <link rel="shortcut icon" href="../graphic/image_zHQ_icon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="../css/button.css">
+    <style>
+      html{
+        height:100%;
+        overflow-y: hidden;
+      }
+    </style>
+    <script src="../js/jquery-3.3.1.min.js"></script>
+   </head>
+   <body>
+    <svg id="Canvas" width="800" height="800" style="border:1px solid #000000;"></svg>
+    <div id="displays" style="position:relative; color:red; font-size:50px; 
+        top:-110px; left:1000px;">
+      <p id="iterations_display" style="visibility: hidden;">0 Iterations.</p>
+    </div>
+    <div id="new_pattern" style="position:relative; top:-970px; left:1200px;">
+      <p style="font-size:50px; color:#dd4444"><b>Pattern Editor (SVG)</b></p>
+      <div id="recursive_level" style="position:relative; left:-120px; top:-30px; font-size:20px">
+        <b>Recursive Level:</b>
+        <button class="button" value="recursivelevel">2-RL</button>
+      </div>
+      <div id="relative_mode" style="position:relative; left:170px; top:-87px; font-size:20px">
+        <b>Relative Mode:</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <button class="button" value="relativemode">MRM</button>
+      </div>
+      <!---  floating menu --->
+      <div class="floating_menu" id="rl_menu" style="position:relative; left:27px; top:-90px; font-size:20px; display: none">
+        <button class="button" value="2">2-RL</button>
+        <button class="button" value="3">3-RL</button>
+        <button class="button" value="4">4-RL</button>
+      </div>
+      <div class="floating_menu" id="rm_menu" style="position:relative; left:216px; top:-90px; font-size:20px; display: none">
+        <button class="button" value="MRM">MRM</button>
+        <button class="button" value="RMRM">RMRM</button>
+      </div>
+      <!---      end       --->
+      <div id="pattern_color" style="position:relative; left:-120px; top:-70px; font-size:20px">
+        <b>Pattern Color:</b>&nbsp;&nbsp;&nbsp;
+        <input type="color" name="patterncolor" class="button">
+      </div>
+      <div id="background_color" style="position:relative; left:170px; top:-133px; font-size:20px">
+        <b>Background Color:</b>
+        <input type="color" name="backgroundcolor" value="#ffffff" class="button">
+        <button class="button" value="setbackgroundcolor">Set</button>
+      </div>
+      <div id="pattern_size" style="position:relative; left:-120px; top:-110px; font-size:20px">
+        <b>Pattern Size:</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <button class="button" value="patternsize">1.0</button>
+      </div>
+      <div id="line_width" style="position:relative; left:170px; top:-170px; font-size:20px">
+        <b>Line Width:</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <button class="button" value="linewidth">1</button>
+      </div>
+      <!---  floating menu --->
+      <div class="floating_menu" id="ps_slider" style="position:relative; left:27px; top:-160px; font-size:20px; display: none">
+        <input type="range" value="1" step="0.01" min="0.1" max="2">
+      </div>
+      <div class="floating_menu" id="lw_slider" style="position:relative; left:216px; top:-160px; font-size:20px; display: none">
+        <input type="range" value="1" step="1" min="1" max="30">
+      </div>
+      <!---      end       --->
+      <div id="pattern_select" style="position:relative; left:-120px; top:-130px; font-size:20px">
+        <b>Pattern Select:</b><br/>
+        <canvas id="patternselect" width="200" height="200" style="border:1px solid #000000;">
+      </div>
+      <div id="pattern_detail" style="position:relative; left:-120px; top:-130px; font-size:20px">
+        Click to select pattern.
+      </div>
+      <div id="create_clear" style="position:relative; left:-120px; top:-40px; font-size:20px">
+        <button class="button" value="create">Create</button>
+        <button class="button" value="undo">Undo</button>
+        <button class="button" value="clear">Clear</button>
+        <button class="button" value="animate" style="display: none">Animate</button>
+        <a href="#" class="button" id="download" download="image.svg">Download</a>
+      </div>
+      <div id="file_process" style="position:relative; left:-120px; top:-20px; font-size:20px">
+        <button class="button" value="save">Save</button>
+        <button class="button" value="load">Load</button>
+        <input type="file" id="file_input" style="display: none">
+      </div>
+      <!------------
+      <div class="links">
+        <a class="openpop" href="http://getbootstrap.com/">Link 1</a>
+        <a class="openpop" href="http://www.jsfiddle.net">Link 2</a>
+        <a class="openpop" href="http://www.w3schools.com">Link 3</a>
+      </div>
+      <div class="wrapper">
+        <div class="popup">
+          <iframe id="iframe0" src="" width="800" height="800" frameborder="1" scrolling="auto">
+            <p>Your browser does not support iframes.</p>
+          </iframe>
+          <a href="#" class="close">X</a>
+        </div>
+      </div>
+      ------------->
+    </div>
+    <div id="select_iframe" style="position:relative; font-size:20px; 
+        top:-963px; left:850px; display: none">
+        <iframe id="selectiframe" src="" width="1000" height="800" frameborder="1" scrolling="auto"></iframe>
+        <p align="center" style="position:relative; top:0px; left:-700px"></p>
+        <button class="button" value="cancel" style="position: relative; top:-65px; left:600px">Cancel</button>
+    </div>
+    <script src="../js/global.js"></script>
+    <script src="../js/function.js"></script>
+    <script src="../js/class_svg.js"></script>
+    <script src="../js/FileSaver.min.js"></script>
+    <script>
+      //  animate FPS control
+      var fps, fpsInterval, startTime, now, then, elapsed;
+      fps = 60;
+
+      //objects
+      var pf;  //PlanetFactory
+      var ps;  //PlanetSet
+      var orbit;  //Orbit
+      var draw;  //Draw
+
+      var SYSTEM_MODE = SOLAR_SYSTEM;
+      var RELATIVE_MODE = MRM;
+      var RECURSIVE_LEVEL = 2;
+      var ANIMATE_SPEED = 10;
+
+      var PATTERN_SIZE = 1;
+      var LINE_WIDTH = 1;
+
+      var canvas = document.getElementById("Canvas");
+      var ctx;// = canvas.getContext("2d");
+      var svg = canvas;
+      var window_width = 800;//canvas.width;
+      var window_height = 800;//canvas.height;
+      var background_color = "#ffffff";
+
+      var has_selected_pattern = false;
+      var selected_pattern_angular = "";
+      var pattern_select_canvas = document.getElementById("patternselect");
+      var psctx = pattern_select_canvas.getContext("2d");
+
+      var image_data_list = [];
+      var drawing_content_list = [];
+    </script>
+
+    <script src="../js/api.js"></script>
+    <script>
+      $(document).ready(function(){
+        $("#recursive_level").children("button").click(function(){
+          closeElseMenu("rl_menu");
+        });
+        $("#relative_mode").children("button").click(function(){
+          closeElseMenu("rm_menu");
+        });
+        $("#pattern_size").children("button").click(function(){
+          closeElseMenu("ps_slider");
+        });
+        $("#line_width").children("button").click(function(){
+          closeElseMenu("lw_slider");
+        });
+        $("#background_color").children("button").click(function(){
+          background_color = $("#background_color").children("input").val();
+          drawing_content_list[0] = background_color;
+          image_data_list = [];
+          clearCanvasSVG(svg);
+          drawByContent();
+        });
+        //////////////////////////////
+        $("#rl_menu").children("button").click(function(){
+          RECURSIVE_LEVEL = Number($(this).val());
+          $("#recursive_level").children("button").html(RECURSIVE_LEVEL.toString()+"-RL");
+        });
+        $("#rm_menu").children("button").click(function(){
+          RELATIVE_MODE = $(this).val();
+          $("#relative_mode").children("button").html(RELATIVE_MODE);
+        });
+        $("#ps_slider").children("input").change(function(){
+          PATTERN_SIZE = $(this).val();
+          $("#pattern_size").children("button").html(PATTERN_SIZE.toString());
+        });
+        $("#lw_slider").children("input").change(function(){
+          LINE_WIDTH = $(this).val();
+          $("#line_width").children("button").html(LINE_WIDTH.toString());
+        });
+        //////////////////////////////
+        $("#patternselect").click(function(){                     // select pattern
+          $("#selectiframe").attr("src", "");
+          $("#selectiframe").attr("src", "select_iframe.html");
+          $("#select_iframe").children("p").html($("#recursive_level").children("button").html()+", "+$("#relative_mode").children("button").html());
+
+          var iframe = document.getElementById("selectiframe");
+          iframe.onload = function(){
+            iframe.contentWindow.postMessage($("#recursive_level").children("button").html()+","+$("#relative_mode").children("button").html(), "*");
+          }
+
+          $("#new_pattern").slideUp();
+          $("#file_process").slideUp();
+          $("#select_iframe").slideDown();
+        });
+        $("#select_iframe").children("button").click(function(){  // cancel
+          $("#select_iframe").slideUp();
+          $("#new_pattern").slideDown();
+          $("#file_process").slideDown();
+          $("#selectiframe").attr("src", "");
+        });
+        //////////////////////////////
+        $("#create_clear").children("button").click(function(){
+          switch($(this).val()){
+            case "create":
+              if (!has_selected_pattern){
+                alert("Select pattern first!");
+                break;
+              }
+
+              //image_data_list.push(ctx.getImageData(0, 0, window_width, window_height));
+              drawing_content_list.push(""+RECURSIVE_LEVEL+"_"+RELATIVE_MODE+"_"+PATTERN_SIZE+"_"+$("#pattern_color").children("input").val()+"_"+LINE_WIDTH+"_"+selected_pattern_angular);
+
+              setParameter(
+                RECURSIVE_LEVEL, 
+                RELATIVE_MODE,
+                PATTERN_SIZE,
+                $("#pattern_color").children("input").val(),
+                LINE_WIDTH
+              );
+              redraw(selected_pattern_angular);
+              break;
+            case "clear":
+              init();
+              clearCanvasSVG(svg);
+              image_data_list = [];
+              drawing_content_list = [];
+              drawing_content_list.push(background_color);
+              break;
+            case "undo":
+              // if (image_data_list.length == 0){
+              //   break;
+              // }
+              // drawing_content_list.pop();
+              // ctx.putImageData(image_data_list.pop(), 0, 0);
+
+              if (image_data_list.length == 0){
+                 break;
+              }
+              drawing_content_list.pop();
+              svg.removeChild(image_data_list.pop());
+              break;
+          }
+        });
+
+        $("#download").click(function(){
+          // var image = canvas.toDataURL();
+          // $(this).attr("href", image);
+
+          $("#Canvas").attr("style", "");
+          //get svg source.
+          var serializer = new XMLSerializer();
+          var source = serializer.serializeToString(svg);
+          //add name spaces.
+          if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
+              source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+          }
+          if(!source.match(/^<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)){
+              source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+          }
+          //add xml declaration
+          source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
+          //convert svg source to URI data scheme.
+          var url = "data:image/svg+xml;charset=utf-8,"+encodeURIComponent(source);
+          //set url value to a element's href attribute.
+
+          $("#Canvas").attr("style", "border:1px solid #000000;");
+
+          $(this).attr("href", url);
+        });
+
+        //////////////////////////////
+        $("#file_process").children("button").click(function(){
+          if ($(this).val() == "save"){
+            saveFile("Pattern_Save.txt");
+          } else if ($(this).val() == "load"){
+            $("#file_input").click();
+          }
+        });
+        $("#file_input").change(function(){
+          var f_input = document.getElementById("file_input");
+          if (!f_input.files[0]){
+            alert("Invalid File!");
+            return;
+          }
+          loadFile(f_input.files[0]);
+          f_input.value = "";
+        });
+      });
+
+      function closeElseMenu(id){
+        $(".floating_menu:not(#"+id+")").slideUp();
+        $("#"+id).slideToggle();
+      }
+    </script>
+
+    <script>
+
+      init();
+      main();
+
+      function setParameter(rl, rm, zoom, color, width){
+        RECURSIVE_LEVEL = rl;
+        RELATIVE_MODE = rm;
+        changeParameter(zoom, color, width);
+      }
+
+      function init(){
+        pf = new PlanetFactory(RECURSIVE_LEVEL, RELATIVE_MODE);
+        ps = pf.createPlanet();
+        orbit = new Orbit(ps);
+        draw = new Draw(orbit, ps);
+      }
+
+      function changeParameter(zoom, color, width){
+        pf.set(RECURSIVE_LEVEL, RELATIVE_MODE);
+        ps = pf.createPlanet();
+        orbit.set(ps, zoom, color);
+        draw.set(orbit, ps, width);
+      }
+
+      function redraw(angular){  //string
+        draw.reset();
+
+        var split_parameter = angular.split(',');
+        if (split_parameter.length != RECURSIVE_LEVEL){
+          alert("Angular Increments number is wrong!");
+          return;
+        }
+        var s, e, i;
+        s = RELATIVE_MODE == MRM ? 1 : 0;
+        e = s + RECURSIVE_LEVEL;
+        for (i = 0; s < e; s++, i++){
+          ps.setAnGularIncrements(s, Number(split_parameter[i]));
+        }
+
+        //toggleLoadingText("visible");
+        orbit.calculate(800, 800);
+        //toggleLoadingText("hidden");
+        draw.drawOrbitSVG();
+      }
+
+      function drawByContent(){
+        var list_length = drawing_content_list.length;
+        if (list_length <= 1){
+          return;
+        }
+        image_data_list = [];
+        background_color = drawing_content_list[0];
+        clearCanvasSVG(svg);
+        for (var i = 1; i < list_length; i++){
+          //image_data_list.push(ctx.getImageData(0, 0, window_width, window_height));
+          var content_split = drawing_content_list[i].split("_");
+          setParameter(
+            Number(content_split[0]), 
+            content_split[1],
+            Number(content_split[2]),
+            content_split[3],
+            Number(content_split[4])
+          );
+          redraw(content_split[5]);
+        }
+      }
+
+      function saveFile(name){
+        var str = "";
+        for (var i = 0; i < drawing_content_list.length; i++){
+          str += drawing_content_list[i] + " ";
+        }
+        var blob = new Blob([str], {type: "text/plain;charset=utf-8"});
+        saveAs(blob, name);
+      }
+
+      function loadFile(file){
+        //var files = event.target.files;
+        var reader = new FileReader();
+        reader.onload = function()
+        {
+          var data = this.result.split(" ");
+          background_color = data[0];
+          drawing_content_list = [];
+          drawing_content_list.push(background_color);
+          for (var i = 1; i < data.length - 1; i++){
+            drawing_content_list.push(data[i]);
+          }
+          drawByContent();
+        }
+        reader.readAsText (file);
+      }
+
+      function main(){
+        /*
+        setParameter(2, RMRM, 1.5, '#ff0000');
+        redraw(0.1, 0.9);
+        setParameter(2, RMRM, 2.0, '#00ff00');
+        redraw(0.1, 0.9);
+        setParameter(2, RMRM, 1.0, '#0000ff');
+        redraw(0.3, 0.7);
+        */
+        clearCanvasSVG(svg);
+        drawing_content_list.push(background_color);
+        //display();
+        psctx.beginPath();
+        //psctx.strokeStyle = color;
+        //psctx.lineWidth = line_width;
+        psctx.font = "200px Arial";
+        psctx.strokeText("+", 40, 165);
+
+        ///////// Draw by URL /////////
+
+        var url_parameter = getParameterByName("load");
+        //alert(url_parameter);
+        if (typeof url_parameter === "string" && url_parameter.length > 0) {
+          var data = url_parameter.split(" ");
+          background_color = data[0];
+          drawing_content_list = [];
+          drawing_content_list.push(background_color);
+          for (var i = 1; i < data.length - 1; i++){
+            drawing_content_list.push(data[i]);
+          }
+          drawByContent();
+        }
+
+        ///////////////////////////////
+
+        window.addEventListener("message", drawSelectPattern);
+      }
+
+      function drawSelectPattern(event){
+        has_selected_pattern = true;
+        selected_pattern_angular = event.data;
+
+        // var temp_ctx = ctx;
+        // ctx = psctx;
+        // var temp_pf = new PlanetFactory(RECURSIVE_LEVEL, RELATIVE_MODE);
+        // var temp_ps = temp_pf.createPlanet();
+        // var temp_orbit = new Orbit(temp_ps);
+        // var temp_draw = new Draw(temp_orbit, temp_ps);
+        // clearCanvas(ctx);
+        // temp_orbit.set(temp_ps, 0.3, "#000000");
+        // temp_draw.set(temp_orbit, temp_ps, 1);
+
+        // temp_draw.reset();
+        // var split_parameter = selected_pattern_angular.split(',');
+        // if (split_parameter.length != RECURSIVE_LEVEL){
+        //   alert("Angular Increments number is wrong!");
+        //   return;
+        // }
+        // var s, e, i;
+        // s = RELATIVE_MODE == MRM ? 1 : 0;
+        // e = s + RECURSIVE_LEVEL;
+        // for (i = 0; s < e; s++, i++){
+        //   temp_ps.setAnGularIncrements(s, Number(split_parameter[i]));
+        // }
+
+        // //toggleLoadingText("visible");
+        // temp_orbit.calculate(200, 200);
+        // //toggleLoadingText("hidden");
+        // temp_draw.drawOrbit();
+
+        // ctx = temp_ctx;
+
+        $("#pattern_detail").html("("+selected_pattern_angular+")");
+        $("#select_iframe").slideUp();
+        $("#new_pattern").slideDown();
+        $("#file_process").slideDown();
+        $("#selectiframe").attr("src", "");
+      }
+
+      function display(){
+        fpsInterval = 1000 / fps;
+        then = Date.now();
+        startTime = then;
+        animate();
+      }
+
+      function animate(){
+        requestAnimationFrame(animate);
+
+        now = Date.now();
+        elapsed = now - then;
+
+        if (elapsed > fpsInterval){
+          then = now - (elapsed % fpsInterval);
+        }
+        update();
+      }
+
+      function update(){
+        //clearCanvas();
+        draw.update();
+      }
+     </script>
+   </body>
+ </html>
